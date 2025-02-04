@@ -14,6 +14,9 @@ List<String> words = [
   'great',
 ];
 
+/// For a specific position in the matrix, [startPoint], 
+/// this method maps and returns the positions that can be visited from the [startPoint]
+
 List<(int, int)> findPositions(
   (int, int) startPoint,
   (int, int) matrixDimensions,
@@ -61,7 +64,6 @@ List<String> findWords(List<List<String>> matrix, List<String> words) {
         }
       }
     }
-    // wordIndex++;
     // We cannot find the letter in the matrix, so the word cannot be built
     if (backTracking.isEmpty) {
       continue;
@@ -69,14 +71,19 @@ List<String> findWords(List<List<String>> matrix, List<String> words) {
     // add first letter to tracked positions
     trackedPositions.addAll(backTracking);
     while (backTracking.isNotEmpty) {
+      // the first position of backTracking is used for visit the next letter. We are simulating a queue.
       final position = backTracking.removeAt(0);
       trackedPositions.add(position);
       wordIndex = position.wordIndex;
+      // because if the wordIndex is equal to the length and the last letter is the same than the one in the position,
+      // it means we found the path to the word and it can be built by using the matrix.
       if (wordIndex == word.length && word[wordIndex - 1] == position.char) {
         foundWords.add(word);
         backTracking.clear();
         continue;
       }
+
+      // we must find the positions that only match with the letter where are seeking for
       final newTrackedPositions = findPositions(
               (position.x, position.y), matrixDimensions, trackedPositions)
           .map((e) => Position(
@@ -87,11 +94,15 @@ List<String> findWords(List<List<String>> matrix, List<String> words) {
           .where((e) => word[wordIndex] == e.char)
           .toList();
       if (newTrackedPositions.isNotEmpty) {
+        // because we are simulating a queue, the first element of newTrackedPositions has to be the first element of backTracking
+        // the rest of them will be added at the end, because maybe we have more possibilities from other paths.
         final positionToInsert = newTrackedPositions.removeAt(0);
         backTracking.insert(0, positionToInsert);
         backTracking.addAll(newTrackedPositions);
         trackedPositions.add(positionToInsert);
       } else {
+        // trackPositions must be cleaned up when we cannot find newTrackedPositions, because maybe
+        // we can use the removed ones to find another path. If they stay in the list, we cannot use them again.
         trackedPositions.removeWhere(
             (e) => e.wordIndex == wordIndex && e.char == position.char);
       }
